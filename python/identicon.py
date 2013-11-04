@@ -36,9 +36,9 @@ def gen_identicon(text):
     draw = ImageDraw.Draw(im)
     
     #get the color of the icon
-    h = int(md5text[0:16], 16)%1000/1000.0
-    l = int(md5text[16:24], 16)%1000/1000.0
-    s = int(md5text[24:32], 16)%1000/1000.0
+    h = int(md5text[13:16], 16)/4096.0
+    l = int(md5text[21:24], 16)/4096.0
+    s = int(md5text[29:32], 16)/4096.0
     color = gen_color(h, l, s)
     
     for i in xrange(len(md5text)):
