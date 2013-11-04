@@ -4,15 +4,19 @@ import colorsys
 import random
 
 def randcolor():
+    '''Generate a random nice color.'''
+    #Void solid red, green, blue
     h = random.uniform(0.02, 0.31)*random.choice([1,2,3])
+    #Void too dark or too light
     l = random.uniform(0.3, 0.8)
+    #Void too dark or too bright
     s = random.uniform(0.3, 0.8)
     rgb = colorsys.hls_to_rgb(h, l, s)
     return (int(rgb[0]*256), int(rgb[1]*256), int(rgb[2]*256))
 
 def gen_identicon(text):
     md5text = hashlib.md5(text).hexdigest() #hash the text
-    size = (8,8)
+    size = (8,8)  #image size
     im = Image.new('RGB', size, 'white')
     draw = ImageDraw.Draw(im)
     c = randcolor()
@@ -28,6 +32,5 @@ def gen_identicon(text):
     return im
     
 if __name__=='__main__':
-    im = gen_identicon('')
+    im = gen_identicon('maogm12@gmail.com')
     im.show()
-    
