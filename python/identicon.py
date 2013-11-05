@@ -10,9 +10,9 @@ def gen_color(h = None, l = None, s = None):
     '''Generate a random nice color.'''
     if h is None:
         #Void solid red, green, blue
-        h = random.uniform(0.02, 0.31)*random.choice([1,2,3])
+        h = random.uniform(0.02, 0.31) + random.choice([0, 1/3.0,2/3.0])
     else:
-        h = (h*0.29+0.02)*(int(h*3)+1)
+        h = h%(1/3.0)*0.29+0.02 + (int(h*3)/3.0)
     
     if l is None:
         #Void too dark or too light
@@ -59,3 +59,5 @@ if __name__=='__main__':
         text = sys.argv[1]
     im = gen_identicon(text)
     im.show()
+    im.save('icon_8_8.bmp')
+    im.resize((128,128)).save('icon_128_128.bmp')

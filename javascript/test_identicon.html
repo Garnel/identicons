@@ -5,8 +5,18 @@
     <title>Test Identicon.js</title>
     <script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/md5.js"></script>
     <script src="./identicon.js"></script>
+    <script>
+    window.onload = function(){ //
+        var icon = new Identicon({
+            renderTo: "identicon",
+            text: "maogm12@gmail.com",
+            width: 128,
+            height: 128
+        });
+    };
+    </script>
 </head>
 <body>
-    
+    <div id="identicon"></div>
 </body>
 </html>
