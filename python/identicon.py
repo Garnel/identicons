@@ -1,4 +1,6 @@
 '''
+identicon.py
+maogm12@gmail.com
 Usage: python identicon.py [text]
 '''
 from PIL import Image, ImageDraw
