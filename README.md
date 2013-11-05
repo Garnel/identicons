@@ -1,1 +1,4 @@
-#identicons
+identicons
+=========
+
+A simple identicon implementation
