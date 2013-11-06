@@ -3,9 +3,70 @@
     identicon.js v1.0
     maogm12@gmail.com
     */
+class Identicon {
+    private $text;
+    private $hash;
+    private $color;
+
+    public function __construct($_text)
+    {
+        $this->text = $_text;
+        $md5 = md5($this->text);
+        $this->hash = '';
+        
+        //Get 32-bits hash string
+        for ($i = 0; $i < strlen($md5); $i++) { //md5 hash should be 32-bits
+            if (strpos('01234567', $md5[$i]) !== false) { //should be !==
+                $this->hash .= '1';
+            } else {
+                $this->hash .= '0';
+            }
+        }
+        
+        //Get color
+        $h = hexdec(substr($md5, 13, 3))/4096;
+        $s = hexdec(substr($md5, 21, 3))/4096;
+        $l = hexdec(substr($md5, 29, 3))/4096;
+        $this->color = $this->gen_color($h, $s, $l);
+    }
+
     
-    /*helper functions*/
-    function HuetoRGB($v1, $v2, $vH) {
+    public function image($width = 8, $height = 8) {
+        //create a white empty image using gd lib
+        $im = imagecreatetruecolor($width, $height);
+        $white = imagecolorallocate($im, 255, 255, 255);
+        imagefilledrectangle($im, 0, 0, $width, $height, $white);
+        
+        //get the hash-specified color
+        $im_color = imagecolorallocate($im, $this->color['r'], 
+                                            $this->color['g'], 
+                                            $this->color['b']);
+        
+        //get image-related lengthes
+        $px_len = floor(min($width, $height)/8);
+        $icon_edge = $px_len*8;
+        $top = floor(($height - $icon_edge)/2);
+        $left = floor(($width - $icon_edge)/2);
+
+        // 01234567 for foreground
+        for ($i = 0; $i < strlen($this->hash); $i++) { //should be 32 bits
+            if ($this->hash[$i] === "1") {
+                $xl = $left + $i%4*$px_len;
+                $xr = $left + (7-$i%4)*$px_len;
+                $y = $top + floor($i/4)*$px_len;
+                imagefilledrectangle($im, $xl, $y, $xl+$px_len-1, $y+$px_len-1, $im_color);
+                imagefilledrectangle($im, $xr, $y, $xr+$px_len-1, $y+$px_len-1, $im_color);
+            }
+        }
+        
+        ob_start();
+        ImagePNG($im);      //display the image
+        ImageDestroy($im);  //destroy the image
+        return ob_get_clean();
+    }
+    
+    //Helper function for HSLtoRGB
+    private function HuetoRGB($v1, $v2, $vH) {
         if ( $vH < 0 ) {
             $vH += 1;
         }
@@ -23,8 +84,9 @@
         }
         return ( $v1 );
     }
-
-    function HSLtoRGB($H, $S, $L) {
+    
+    //convert hsl color to rgb
+    private function HSLtoRGB($H, $S, $L) {
         if ( $S == 0 ) {
             $R = $L * 255;
             $G = $L * 255;
@@ -38,9 +100,9 @@
 
             $var_1 = 2 * $L - $var_2;
 
-            $R = 255 * HuetoRGB( $var_1, $var_2, $H + ( 1 / 3 ) );
-            $G = 255 * HuetoRGB( $var_1, $var_2, $H );
-            $B = 255 * HuetoRGB( $var_1, $var_2, $H - ( 1 / 3 ) );
+            $R = 255 * $this->HuetoRGB( $var_1, $var_2, $H + ( 1 / 3 ) );
+            $G = 255 * $this->HuetoRGB( $var_1, $var_2, $H );
+            $B = 255 * $this->HuetoRGB( $var_1, $var_2, $H - ( 1 / 3 ) );
         }
 
         return array('r' => $R, 
@@ -48,7 +110,8 @@
                      'b' => $B);
     }
 
-    function gen_color($h = null, $s = null, $l = null) {
+    //gen rgb color by h,s,l (both 0-1 float)
+    private function gen_color($h = null, $s = null, $l = null) {
         //Generate a random nice color.'''
         if (is_null($h)) {
             //Void solid red, green, blue
@@ -71,52 +134,8 @@
             $l = $l*0.5+0.3;
         }
 
-        return HSLtoRGB($h, $s, $l);
+        return $this->HSLtoRGB($h, $s, $l);
     }
-    
-    function gen_identicon($width = 8, $height = 8, $text = '') {
-        $hash = md5($text);
-        $h = hexdec(substr($hash, 13, 3))/4096;
-        $s = hexdec(substr($hash, 21, 3))/4096;
-        $l = hexdec(substr($hash, 29, 3))/4096;
-        $rgb = gen_color($h, $s, $l);
-        
-        //create a white empty image
-        $im = imagecreatetruecolor($width, $height);
-        $white = imagecolorallocate($im, 255, 255, 255);
-        imagefilledrectangle($im, 0, 0, $width, $height, $white);
-        
-        //get the hash-specified color
-        $color = imagecolorallocate($im, $rgb['r'], $rgb['g'], $rgb['b']);
-        
-        //get image-related lengthes
-        $px_len = floor(min($width, $height)/8);
-        $icon_edge = $px_len*8;
-        $top = floor(($height - $icon_edge)/2);
-        $left = floor(($width - $icon_edge)/2);
-
-        // 01234567 for foreground
-        for ($i = 0; $i < strlen($hash); $i++) { //should be 32 times
-            if (strpos('01234567', $hash[$i]) !== false) { //should be !==
-                $xl = $left + $i%4*$px_len;
-                $xr = $left + (7-$i%4)*$px_len;
-                $y = $top + floor($i/4)*$px_len;
-                imagefilledrectangle($im, $xl, $y, $xl+$px_len-1, $y+$px_len-1, $color);
-                imagefilledrectangle($im, $xr, $y, $xr+$px_len-1, $y+$px_len-1, $color);
-            }
-        }
-        
-        return $im;
-    }
-    
-    //get some vars
-    $width  = isset($_REQUEST['width'])  ? $_REQUEST['width']  : 8;
-    $height = isset($_REQUEST['height']) ? $_REQUEST['height'] : 8;
-    $text   = isset($_REQUEST['text'])   ? $_REQUEST['text']   : '';
-
-    //use gd lib
-    $im = gen_identicon($width, $height, $text);
-    
-    Header("Content-type: image/png");
-    ImagePNG($im);  //display the image
-    ImageDestroy($im);  //destroy the image
+}
+//Usage: $icon=new Identicon('maogm12@gmail.com'); $icon->image(128, 128);
+?>
