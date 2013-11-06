@@ -5,47 +5,34 @@
     */
     
     /*helper functions*/
-    function HuetoRGB( $v1, $v2, $vH )
-    {
-        if ( $vH < 0 )
-        {
+    function HuetoRGB($v1, $v2, $vH) {
+        if ( $vH < 0 ) {
             $vH += 1;
         }
-        if ( $vH > 1 )
-        {
+        if ( $vH > 1 ) {
             $vH -= 1;
         }
-        if ( ( 6 * $vH ) < 1 )
-        {
+        if ( ( 6 * $vH ) < 1 ) {
             return ( $v1 + ( $v2 - $v1 ) * 6 * $vH );
         }
-        if ( ( 2 * $vH ) < 1 )
-        {
+        if ( ( 2 * $vH ) < 1 ) {
             return ( $v2 );
         }
-        if ( ( 3 * $vH ) < 2 )
-        {
+        if ( ( 3 * $vH ) < 2 ) {
             return ( $v1 + ( $v2 - $v1 ) * ( ( 2 / 3 ) - $vH ) * 6 );
         }
         return ( $v1 );
     }
 
-    function HSLtoRGB ( $H, $S, $L )
-    {
-        if ( $S == 0 )
-        {
+    function HSLtoRGB($H, $S, $L) {
+        if ( $S == 0 ) {
             $R = $L * 255;
             $G = $L * 255;
             $B = $L * 255;
-        }
-        else
-        {
-            if ( $L < 0.5 )
-            {
+        } else {
+            if ( $L < 0.5 ) {
                 $var_2 = $L * ( 1 + $S );
-            }
-            else
-            {
+            } else {
                 $var_2 = ( $L + $S ) - ( $S * $L );
             }
 
@@ -67,7 +54,7 @@
             //Void solid red, green, blue
             $h = rand(20, 310)/1000 + rand(0,2)/3;
         } else {
-            $h = ($h-floor($h*3)/3)*0.29 + 0.02 + floor($h*3)/3;
+            $h = ($h-floor($h*3)/3)*0.29*3 + 0.02 + floor($h*3)/3;
         }
 
         if (is_null($s)) {
@@ -110,7 +97,7 @@
 
         // 01234567 for foreground
         for ($i = 0; $i < strlen($hash); $i++) { //should be 32 times
-            if (strpos('01234567', $hash[$i]) != false) {
+            if (strpos('01234567', $hash[$i]) !== false) { //should be !==
                 $xl = $left + $i%4*$px_len;
                 $xr = $left + (7-$i%4)*$px_len;
                 $y = $top + floor($i/4)*$px_len;
