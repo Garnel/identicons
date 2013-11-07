@@ -8,6 +8,7 @@ function Identicon(options){
     this.width = 8;
     this.height = 8;
     this.text = '';
+    this.canvas = null;
     if (options) {
         if (options.hasOwnProperty('renderTo'))
             this.renderTo = options.renderTo;
@@ -54,36 +55,43 @@ Identicon.prototype.genColor = function(h, s, l){
     return 'hsl(' + h + ',' + s + '%,' + l + '%)';
 };
 
-Identicon.prototype.render = function(){
+Identicon.prototype.render = function(repaint){
+    if (typeof repaint == "undefined")
+        repaint = false;
+
     var container = document.getElementById(this.renderTo);
     if (container === null)  //no such a div
         return;
 
-    var icon_canvas = document.createElement('canvas');
-    container.appendChild(icon_canvas);
+    //force repain or the canvas is not inited yet
+    if (repaint === true || this.canvas === null) {
+        this.canvas = document.createElement('canvas');
+        container.innerHTML = ""; //clear content in container
+        container.appendChild(this.canvas);
+    }
 
-    icon_canvas.width = this.width;
-    icon_canvas.height = this.height;
+    this.canvas.width = this.width;
+    this.canvas.height = this.height;
 
     //render on canvas
-    var icon_ctx = icon_canvas.getContext('2d');
+    var icon_ctx = this.canvas.getContext('2d');
     icon_ctx.canvas.width = this.width;
     icon_ctx.canvas.height = this.height;
     icon_ctx.clearRect(0, 0, this.width, this.height);
-    
+
     //get the color
     var h = parseInt(this.hash.slice(13, 16), 16)/4096,
         s = parseInt(this.hash.slice(21, 24), 16)/4096,
         l = parseInt(this.hash.slice(29, 32), 16)/4096;
     var color = this.genColor(h, s, l);
     icon_ctx.fillStyle=color;
-    
+
     //render cubes
     var px_len = Math.floor(Math.min(this.width, this.height)/8),
         icon_edge = px_len*8;
     var top = Math.floor((this.height - icon_edge)/2),
         left = Math.floor((this.width - icon_edge)/2);
-    
+
     for (idx in this.hash) { //size = 32
         if ('01234567'.indexOf(this.hash[idx]) != -1) {
             var xl = left+idx%4*px_len,
@@ -101,7 +109,7 @@ Identicon.prototype.setText = function(text){
     this.text = text;
     this.hash = CryptoJS.MD5(this.text).toString(CryptoJS.enc.Hex); //md5 hash
     
-    this.render();
+    this.render(false);
 };
 
 Identicon.prototype.resize = function(width, height){
@@ -111,5 +119,5 @@ Identicon.prototype.resize = function(width, height){
     this.width = width;
     this.height = height;
     
-    this.render();
+    this.render(false);
 };
