@@ -19,10 +19,79 @@ function Identicon(options){
         if (options.hasOwnProperty('text'))
             this.text = options.text;
     }
-    this.hash = CryptoJS.MD5(this.text).toString(CryptoJS.enc.Hex); //md5 hash
-
+    this.genHash();
     this.render();
 };
+
+Identicon.prototype.genHash = function () {
+    var hashStr = this.murmurHash(this.text, 22).toString(2);
+    // pad 0
+    this.hash = hashStr.length < 32 ? new Array(32 - hashStr.length + 1).join('0') + hashStr : hashStr;
+}
+
+/**
+ * JS Implementation of MurmurHash3 (r136) (as of May 20, 2011)
+ * 
+ * @author <a href="mailto:gary.court@gmail.com">Gary Court</a>
+ * @see http://github.com/garycourt/murmurhash-js
+ * @author <a href="mailto:aappleby@gmail.com">Austin Appleby</a>
+ * @see http://sites.google.com/site/murmurhash/
+ * 
+ * @param {string} key ASCII only
+ * @param {number} seed Positive integer only
+ * @return {number} 32-bit positive integer hash 
+ */
+Identicon.prototype.murmurHash = function (key, seed) {
+	var remainder, bytes, h1, h1b, c1, c1b, c2, c2b, k1, i;
+	
+	remainder = key.length & 3; // key.length % 4
+	bytes = key.length - remainder;
+	h1 = seed;
+	c1 = 0xcc9e2d51;
+	c2 = 0x1b873593;
+	i = 0;
+	
+	while (i < bytes) {
+	  	k1 = 
+	  	  ((key.charCodeAt(i) & 0xff)) |
+	  	  ((key.charCodeAt(++i) & 0xff) << 8) |
+	  	  ((key.charCodeAt(++i) & 0xff) << 16) |
+	  	  ((key.charCodeAt(++i) & 0xff) << 24);
+		++i;
+		
+		k1 = ((((k1 & 0xffff) * c1) + ((((k1 >>> 16) * c1) & 0xffff) << 16))) & 0xffffffff;
+		k1 = (k1 << 15) | (k1 >>> 17);
+		k1 = ((((k1 & 0xffff) * c2) + ((((k1 >>> 16) * c2) & 0xffff) << 16))) & 0xffffffff;
+
+		h1 ^= k1;
+        h1 = (h1 << 13) | (h1 >>> 19);
+		h1b = ((((h1 & 0xffff) * 5) + ((((h1 >>> 16) * 5) & 0xffff) << 16))) & 0xffffffff;
+		h1 = (((h1b & 0xffff) + 0x6b64) + ((((h1b >>> 16) + 0xe654) & 0xffff) << 16));
+	}
+	
+	k1 = 0;
+	
+	switch (remainder) {
+		case 3: k1 ^= (key.charCodeAt(i + 2) & 0xff) << 16;
+		case 2: k1 ^= (key.charCodeAt(i + 1) & 0xff) << 8;
+		case 1: k1 ^= (key.charCodeAt(i) & 0xff);
+		
+		k1 = (((k1 & 0xffff) * c1) + ((((k1 >>> 16) * c1) & 0xffff) << 16)) & 0xffffffff;
+		k1 = (k1 << 15) | (k1 >>> 17);
+		k1 = (((k1 & 0xffff) * c2) + ((((k1 >>> 16) * c2) & 0xffff) << 16)) & 0xffffffff;
+		h1 ^= k1;
+	}
+	
+	h1 ^= key.length;
+
+	h1 ^= h1 >>> 16;
+	h1 = (((h1 & 0xffff) * 0x85ebca6b) + ((((h1 >>> 16) * 0x85ebca6b) & 0xffff) << 16)) & 0xffffffff;
+	h1 ^= h1 >>> 13;
+	h1 = ((((h1 & 0xffff) * 0xc2b2ae35) + ((((h1 >>> 16) * 0xc2b2ae35) & 0xffff) << 16))) & 0xffffffff;
+	h1 ^= h1 >>> 16;
+
+	return h1 >>> 0;
+}
 
 Identicon.prototype.genColor = function(h, s, l){
     //Generate a random nice color.
@@ -56,7 +125,7 @@ Identicon.prototype.genColor = function(h, s, l){
 };
 
 Identicon.prototype.render = function(repaint){
-    if (typeof repaint == "undefined")
+    if (typeof repaint === 'undefined')
         repaint = false;
 
     var container = document.getElementById(this.renderTo);
@@ -66,7 +135,7 @@ Identicon.prototype.render = function(repaint){
     //force repain or the canvas is not inited yet
     if (repaint === true || this.canvas === null) {
         this.canvas = document.createElement('canvas');
-        container.innerHTML = ""; //clear content in container
+        container.innerHTML = ''; //clear content in container
         container.appendChild(this.canvas);
     }
 
@@ -80,9 +149,9 @@ Identicon.prototype.render = function(repaint){
     icon_ctx.clearRect(0, 0, this.width, this.height);
 
     //get the color
-    var h = parseInt(this.hash.slice(13, 16), 16)/4096,
-        s = parseInt(this.hash.slice(21, 24), 16)/4096,
-        l = parseInt(this.hash.slice(29, 32), 16)/4096;
+    var h = parseInt(this.hash.slice(0, 10), 2)/1023,
+        s = parseInt(this.hash.slice(11, 21), 2)/1023,
+        l = parseInt(this.hash.slice(22, 32), 2)/1023;
     var color = this.genColor(h, s, l);
     icon_ctx.fillStyle=color;
 
@@ -92,8 +161,8 @@ Identicon.prototype.render = function(repaint){
     var top = Math.floor((this.height - icon_edge)/2),
         left = Math.floor((this.width - icon_edge)/2);
 
-    for (idx in this.hash) { //size = 32
-        if ('01234567'.indexOf(this.hash[idx]) != -1) {
+    for (var idx in this.hash) { //size = 32
+        if (this.hash[idx] == '1') {
             var xl = left+idx%4*px_len,
                 xr = left+(7-idx%4)*px_len,
                 y = top+Math.floor(idx/4)*px_len;
@@ -104,16 +173,15 @@ Identicon.prototype.render = function(repaint){
 };
 
 Identicon.prototype.setText = function(text){
-    if (typeof text == 'undefined')
+    if (typeof text === 'undefined')
         return;
     this.text = text;
-    this.hash = CryptoJS.MD5(this.text).toString(CryptoJS.enc.Hex); //md5 hash
-    
+    this.genHash();
     this.render(false);
 };
 
 Identicon.prototype.resize = function(width, height){
-    if (typeof width == 'undefined' || typeof height == 'undefined')
+    if (typeof width === 'undefined' || typeof height === 'undefined')
         return;
 
     this.width = width;
