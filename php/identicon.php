@@ -11,22 +11,18 @@ class Identicon {
     public function __construct($_text)
     {
         $this->text = $_text;
-        $md5 = md5($this->text);
-        $this->hash = '';
         
-        //Get 32-bits hash string
-        for ($i = 0; $i < strlen($md5); $i++) { //md5 hash should be 32-bits
-            if (strpos('01234567', $md5[$i]) !== false) { //should be !==
-                $this->hash .= '1';
-            } else {
-                $this->hash .= '0';
-            }
+        // murmurhash3
+        $hashVal = $this->murmurhash3($this->text);
+        if ($hashVal < 0) {
+            $hashVal += 0xffffffff;
         }
-        
+        $this->hash = str_pad(decbin($hashVal), 32, '0', STR_PAD_LEFT);
+
         //Get color
-        $h = hexdec(substr($md5, 13, 3))/4096;
-        $s = hexdec(substr($md5, 21, 3))/4096;
-        $l = hexdec(substr($md5, 29, 3))/4096;
+        $h = bindec(substr($this->hash, 0, 10))/1023;
+        $s = bindec(substr($this->hash, 11, 10))/1023;
+        $l = bindec(substr($this->hash, 22, 10))/1023;
         $this->color = $this->gen_color($h, $s, $l);
     }
 
@@ -136,6 +132,43 @@ class Identicon {
 
         return $this->HSLtoRGB($h, $s, $l);
     }
+    
+    // murmurhash for php from https://github.com/lastguest/murmurhash-php
+    private function murmurhash3($key, $seed = 0) {
+    	$klen = strlen($key);
+    	$h1   = $seed;
+    	for ($i = 0, $bytes = $klen - ($remainder = $klen&3); $i < $bytes;) {
+    		$k1 = ((ord($key[$i]) & 0xff))
+    			| ((ord($key[++$i]) & 0xff) << 8)
+    			| ((ord($key[++$i]) & 0xff) << 16)
+    			| ((ord($key[++$i]) & 0xff) << 24);
+    		++$i;
+    		$k1  = (((($k1 & 0xffff) * 0xcc9e2d51) + (((($k1 >> 16) * 0xcc9e2d51) & 0xffff) << 16))) & 0xffffffff;
+    		$k1  = $k1 << 15 | $k1 >> 17;
+    		$k1  = (((($k1 & 0xffff) * 0x1b873593) + (((($k1 >> 16) * 0x1b873593) & 0xffff) << 16))) & 0xffffffff;
+    		$h1 ^= $k1;
+    		$h1  = $h1 << 13 | $h1 >> 19;
+    		$h1b = (((($h1 & 0xffff) * 5) + (((($h1 >> 16) * 5) & 0xffff) << 16))) & 0xffffffff;
+    		$h1  = ((($h1b & 0xffff) + 0x6b64) + (((($h1b >> 16) + 0xe654) & 0xffff) << 16));
+    	}
+    	$k1 = 0;
+    	switch ($remainder) {
+    		case 3: $k1 ^= (ord($key[$i + 2]) & 0xff) << 16;
+    		case 2: $k1 ^= (ord($key[$i + 1]) & 0xff) << 8;
+    		case 1: $k1 ^= (ord($key[$i]) & 0xff);
+    		$k1  = ((($k1 & 0xffff) * 0xcc9e2d51) + (((($k1 >> 16) * 0xcc9e2d51) & 0xffff) << 16)) & 0xffffffff;
+    		$k1  = $k1 << 15 | $k1 >> 17;
+    		$k1  = ((($k1 & 0xffff) * 0x1b873593) + (((($k1 >> 16) * 0x1b873593) & 0xffff) << 16)) & 0xffffffff;
+    		$h1 ^= $k1;
+    	}
+    	$h1 ^= $klen;
+    	$h1 ^= $h1 >> 16;
+    	$h1  = ((($h1 & 0xffff) * 0x85ebca6b) + (((($h1 >> 16) * 0x85ebca6b) & 0xffff) << 16)) & 0xffffffff;
+    	$h1 ^= $h1 >> 13;
+    	$h1  = (((($h1 & 0xffff) * 0xc2b2ae35) + (((($h1 >> 16) * 0xc2b2ae35) & 0xffff) << 16))) & 0xffffffff;
+    	$h1 ^= $h1 >> 16;
+    	return base_convert($h1,10,32);
+    }
 }
-//Usage: $icon=new Identicon('maogm12@gmail.com'); $icon->image(128, 128);
+//Usage: $icon=new Identicon('identicon'); $icon->image(128, 128);
 ?>
