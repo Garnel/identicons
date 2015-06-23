@@ -24,7 +24,11 @@ function Identicon(options){
 };
 
 Identicon.prototype.genHash = function () {
-    var hashStr = this.murmurHash(this.text, 22).toString(2);
+    var hashVal = this.murmurHash(this.text, 22);
+    if (hashVal < 0) {
+        hashVal += 0xffffffff;
+    }
+    var hashStr = hashVal.toString(2);
     // pad 0
     this.hash = hashStr.length < 32 ? new Array(32 - hashStr.length + 1).join('0') + hashStr : hashStr;
 }
@@ -68,7 +72,7 @@ Identicon.prototype.murmurHash = function (key, seed) {
 		h1b = ((((h1 & 0xffff) * 5) + ((((h1 >>> 16) * 5) & 0xffff) << 16))) & 0xffffffff;
 		h1 = (((h1b & 0xffff) + 0x6b64) + ((((h1b >>> 16) + 0xe654) & 0xffff) << 16));
 	}
-	
+    
 	k1 = 0;
 	
 	switch (remainder) {
@@ -81,7 +85,7 @@ Identicon.prototype.murmurHash = function (key, seed) {
 		k1 = (((k1 & 0xffff) * c2) + ((((k1 >>> 16) * c2) & 0xffff) << 16)) & 0xffffffff;
 		h1 ^= k1;
 	}
-	
+    
 	h1 ^= key.length;
 
 	h1 ^= h1 >>> 16;
